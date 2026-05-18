@@ -1,5 +1,6 @@
 import express from 'express';
-import router from './modules/client/client.router';
+import cors from 'cors'
+import router from './modules/client/client.router.js';
 const app = express();
 
 app.listen(5000, () => {
