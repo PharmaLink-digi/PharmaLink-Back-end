@@ -1,4 +1,5 @@
 import express from 'express';
+import router from './modules/client/client.router';
 const app = express();
 
 app.listen(5000, () => {
@@ -7,3 +8,4 @@ app.listen(5000, () => {
 
 app.use(express.json())
 app.use(cors())
+app.use(router)
