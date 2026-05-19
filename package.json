@@ -2,13 +2,14 @@
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "kafkajs": "^2.2.4",
+    "mongoose": "^9.6.2",
     "nodemon": "^3.1.14"
   },
   "name": "pharmalink-back-end",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js"
