@@ -4,6 +4,7 @@ import router from './modules/client/client.routes.js';
 import { Kafka } from 'kafkajs'
 import { pharmaciesDB } from './Database/DbConnection.js';
 import clientRouter from './modules/client/client.routes.js';
+import medicationRouter from './modules/medication/medication.routes.js';
 const app = express();
 
 
@@ -76,3 +77,4 @@ app.listen(3000,()=>{
 app.use(express.json())
 app.use(cors())
 app.use(clientRouter)
+app.use(medicationRouter)
