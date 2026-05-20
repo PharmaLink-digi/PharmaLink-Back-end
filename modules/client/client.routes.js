@@ -1,5 +1,5 @@
 import express from 'express'
-import { defaultUserData } from './client.controller.js';
+import { defaultUserData, getClients } from './client.controller.js';
 import { clientsDB } from '../../Database/DbConnection.js';
 const clientRouter = express.Router();
 
@@ -15,5 +15,7 @@ clientRouter.post("/registernewclient", (req,res)=>{
         res.json({message:"client already exist"})
 
 })
+
+clientRouter.get('/clients', getClients)
 
 export default clientRouter;
