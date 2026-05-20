@@ -1,5 +1,5 @@
-import { medicine } from "../../Database/DbConnection"
+import { medicine } from "../../Database/DbConnection.js"
 
-let getAllMedicines = (req,res)=>{
+export let getAllMedicines = (req,res)=>{
     res.json(medicine)
 }
