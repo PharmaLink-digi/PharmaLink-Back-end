@@ -1,12 +1,12 @@
 import express from 'express'
 import { defaultUserData } from './client.controller.js';
 import { clientsDB } from '../../Database/DbConnection.js';
-const router = express.Router();
+const clientRouter = express.Router();
 
-router.get('/', defaultUserData)
+clientRouter.get('/', defaultUserData)
 
 
-router.post("/registernewclient", (req,res)=>{
+clientRouter.post("/registernewclient", (req,res)=>{
     let newClient = req.body
     let client = clientsDB.find(client=> client.email == newClient.email)
     if(!client)
@@ -16,4 +16,4 @@ router.post("/registernewclient", (req,res)=>{
 
 })
 
-export default router;
+export default clientRouter;

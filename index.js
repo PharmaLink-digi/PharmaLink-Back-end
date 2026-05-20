@@ -1,13 +1,14 @@
 import express from 'express';
 import cors from 'cors'
-import router from './modules/client/client.router.js';
+import router from './modules/client/client.routes.js';
 import { Kafka } from 'kafkajs'
 import { pharmaciesDB } from './Database/DbConnection.js';
+import clientRouter from './modules/client/client.routes.js';
 const app = express();
 
 
 app.listen(3000,()=>{
-  console.log(pharmaciesDB);
+
   
   console.log("server running now");
   
@@ -74,4 +75,4 @@ app.listen(3000,()=>{
 
 app.use(express.json())
 app.use(cors())
-app.use(router)
+app.use(clientRouter)
