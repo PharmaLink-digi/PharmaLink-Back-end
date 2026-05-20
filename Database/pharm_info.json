@@ -1,0 +1,102 @@
+[
+  {
+    "pharm_id": 1,
+    "pharm_name": "El Safa Pharmacy",
+    "phone": 3259915374,
+    "address": "Unit 9949 Box 9837\nDPO AP 31614",
+    "discount_percent": 8,
+    "area": "6th of October",
+    "email": "info@elsafa-pharmacy.com",
+    "password": "pW9$kL2xQ!mZ"
+  },
+  {
+    "pharm_id": 2,
+    "pharm_name": "El Hayat Pharmacy",
+    "phone": "623-730-5154",
+    "address": "8503 Mikayla Walks\nWushire, VA 74786",
+    "discount_percent": 8,
+    "area": "Maadi",
+    "email": "info@elhayat-pharmacy.com",
+    "password": "vR4#tN8oP@eX"
+  },
+  {
+    "pharm_id": 3,
+    "pharm_name": "Misr Pharmacy",
+    "phone": "458-345-0120x544",
+    "address": "45924 William Square\nForbesborough, AR 14800",
+    "discount_percent": 15,
+    "area": "5th Settlement",
+    "email": "info@misr-pharmacy.com",
+    "password": "bY7&mK1sF!jW"
+  },
+  {
+    "pharm_id": 4,
+    "pharm_name": "Al Ezaby Pharmacy",
+    "phone": "792.734.8383",
+    "address": "20689 Taylor Plaza\nWest Timothy, OK 21113",
+    "discount_percent": 11,
+    "area": "Maadi",
+    "email": "info@alezaby-pharmacy.com",
+    "password": "hQ3_vA9zL*pD"
+  },
+  {
+    "pharm_id": 5,
+    "pharm_name": "El Hayat Pharmacy",
+    "phone": "001-356-699-4651x350",
+    "address": "31196 Jeffrey Stream\nSandrahaven, AZ 78396",
+    "discount_percent": 15,
+    "area": "5th Settlement",
+    "email": "contact@elhayat-pharmacy.com",
+    "password": "zX5$rE2wN%gT"
+  },
+  {
+    "pharm_id": 6,
+    "pharm_name": "Misr Pharmacy",
+    "phone": "(556)313-1500",
+    "address": "92195 Long Harbors Suite 729\nNewtonfurt, CA 83266",
+    "discount_percent": 7,
+    "area": "Heliopolis",
+    "email": "contact@misr-pharmacy.com",
+    "password": "fJ8@kM4yU!qS"
+  },
+  {
+    "pharm_id": 7,
+    "pharm_name": "Shifa Pharmacy",
+    "phone": "939-767-6692x6811",
+    "address": "00853 Perez Lakes\nDouglasberg, RI 06951",
+    "discount_percent": 20,
+    "area": "Maadi",
+    "email": "info@shifa-pharmacy.com",
+    "password": "tG2#vP7cX_wK"
+  },
+  {
+    "pharm_id": 8,
+    "pharm_name": "Al Ezaby Pharmacy",
+    "phone": "870.437.6160x2838",
+    "address": "USS Matthews\nFPO AE 83251",
+    "discount_percent": 10,
+    "area": "Maadi",
+    "email": "contact@alezaby-pharmacy.com",
+    "password": "nB6&mQ1zO$lR"
+  },
+  {
+    "pharm_id": 9,
+    "pharm_name": "El Dawlia Pharmacy",
+    "phone": "(710)637-1693",
+    "address": "23556 Green Dam Suite 708\nWest Teresaborough, IL 31692",
+    "discount_percent": 9,
+    "area": "Heliopolis",
+    "email": "info@eldawlia-pharmacy.com",
+    "password": "sK4*tY9vE#aX"
+  },
+  {
+    "pharm_id": 10,
+    "pharm_name": "Shifa Pharmacy",
+    "phone": "001-824-418-1289",
+    "address": "4940 Melissa Oval Apt. 929\nNew George, UT 69130",
+    "discount_percent": 7,
+    "area": "Cairo",
+    "email": "contact@shifa-pharmacy.com",
+    "password": "wD3$rF8xP!mN"
+  }
+]

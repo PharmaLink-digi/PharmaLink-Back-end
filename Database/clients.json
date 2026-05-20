@@ -1,0 +1,107 @@
+[
+  {
+    "client_id": 1,
+    "client_name": "Michelle Ortiz",
+    "email": "shawerin@example.org",
+    "phone": "810-787-3136x33844",
+    "password": "pW9$kL2xQ!mZ"
+  },
+  {
+    "client_id": 2,
+    "client_name": "Ashley Steele",
+    "email": "paul32@example.net",
+    "phone": "001-822-921-8631x7576",
+    "password": "vR4#tN8oP@eX"
+  },
+  {
+    "client_id": 3,
+    "client_name": "Mary Wagner",
+    "email": "sampsonlauren@example.com",
+    "phone": "572-703-6862",
+    "password": "bY7&mK1sF!jW"
+  },
+  {
+    "client_id": 4,
+    "client_name": "Yolanda Mitchell",
+    "email": "jerry54@example.org",
+    "phone": "+1-663-823-4569x10546",
+    "password": "hQ3_vA9zL*pD"
+  },
+  {
+    "client_id": 5,
+    "client_name": "David Butler",
+    "email": "upowell@example.net",
+    "phone": "001-274-716-5809x84248",
+    "password": "zX5$rE2wN%gT"
+  },
+  {
+    "client_id": 6,
+    "client_name": "Lauren Nelson",
+    "email": "vegabrianna@example.com",
+    "phone": "001-957-746-4904x55471",
+    "password": "fJ8@kM4yU!qS"
+  },
+  {
+    "client_id": 7,
+    "client_name": "Kristine Stone",
+    "email": "crawfordpatricia@example.com",
+    "phone": "(349)206-7418",
+    "password": "tG2#vP7cX_wK"
+  },
+  {
+    "client_id": 8,
+    "client_name": "Kayla Benjamin",
+    "email": "vanessa84@example.net",
+    "phone": "+1-245-584-9609x292",
+    "password": "nB6&mQ1zO$lR"
+  },
+  {
+    "client_id": 9,
+    "client_name": "Michael Johnson",
+    "email": "jeffery93@example.com",
+    "phone": "001-655-878-4531",
+    "password": "sK4*tY9vE#aX"
+  },
+  {
+    "client_id": 10,
+    "client_name": "Carlos Weaver",
+    "email": "carrilloamber@example.org",
+    "phone": "250-622-0892x42595",
+    "password": "wD3$rF8xP!mN"
+  },
+  {
+    "client_id": 11,
+    "client_name": "Carrie Wolf",
+    "email": "james43@example.net",
+    "phone": "001-935-610-9490x00472",
+    "password": "jH7@kL2zV%qT"
+  },
+  {
+    "client_id": 12,
+    "client_name": "Kimberly Price",
+    "email": "schultzjustin@example.org",
+    "phone": "(892)483-3381x6481",
+    "password": "cO9#vX4wM&pZ"
+  },
+  {
+    "client_id": 13,
+    "client_name": "Melissa Lawrence",
+    "email": "devon80@example.net",
+    "phone": "997-942-1856x61103",
+    "password": "xR2!mT7oK$fG"
+  },
+  {
+    "client_id": 14,
+    "client_name": "Amanda Williams",
+    "email": null,
+    "phone": "+1-224-891-8097x03600",
+    "password": "vE5&pW1sA*hQ"
+  },
+  {
+    "client_id": 15,
+    "client_name": "Richard Fox",
+    "email": "monroejennifer@example.net",
+    "phone": "001-255-300-6211x308",
+    "password": "lK8#zX3vM!wP"
+  }
+]
