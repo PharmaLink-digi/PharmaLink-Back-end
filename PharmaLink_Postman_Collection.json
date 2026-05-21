@@ -1,0 +1,55 @@
+{
+  "info": {
+    "name": "PharmaLink API",
+    "description": "API Collection for the PharmaLink Backend Project",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Client",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/v1/auth/register/client", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register", "client"]},
+            "body": {"mode": "raw", "raw": "{\n  \"client_name\": \"John Doe\",\n  \"phone\": \"1234567890\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"}
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"]},
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Get All Clients",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": {"raw": "{{baseUrl}}/api/v1/clients", "host": ["{{baseUrl}}"], "path": ["api", "v1", "clients"]}
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_TOKEN_HERE"
+    }
+  ]
+}
