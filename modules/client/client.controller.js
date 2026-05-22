@@ -1,4 +1,4 @@
-import * as clientDB from "../../database/client.js";
+import * as clientDB from "../../database/dbclient.js";
 
 export const getAllClients = async (req, res) => {
     try {
