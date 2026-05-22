@@ -6,7 +6,9 @@
     "express": "^5.2.1",
     "kafkajs": "^2.2.4",
     "mongoose": "^9.6.2",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
   },
   "name": "pharmalink-back-end",
   "version": "1.0.0",
