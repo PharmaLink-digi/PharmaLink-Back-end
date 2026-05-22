@@ -1,44 +1,44 @@
-import * as clientDB from "../../database/client.js";
+import * as salesDB from "../../database/sales.js";
 
-export const getAllClients = async (req, res) => {
+export const getAllSales = async (req, res) => {
     try {
-        const data = await clientDB.getAllClients();
+        const data = await salesDB.getAllSales();
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-export const getClientById = async (req, res) => {
+export const getSaleById = async (req, res) => {
     try {
-        const data = await clientDB.getClientById(req.params.id);
+        const data = await salesDB.getSaleById(req.params.id);
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-export const insertClient = async (req, res) => {
+export const insertSale = async (req, res) => {
     try {
-        const data = await clientDB.insertClient(req.body);
+        const data = await salesDB.insertSale(req.body);
         res.status(201).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-export const updateClient = async (req, res) => {
+export const updateSale = async (req, res) => {
     try {
-        const data = await clientDB.updateClient(req.params.id, req.body);
+        const data = await salesDB.updateSale(req.params.id, req.body);
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-export const deleteClient = async (req, res) => {
+export const deleteSale = async (req, res) => {
     try {
-        const data = await clientDB.deleteClient(req.params.id);
+        const data = await salesDB.deleteSale(req.params.id);
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
