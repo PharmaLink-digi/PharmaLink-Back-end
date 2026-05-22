@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { swaggerUi, swaggerSpec } from "./docs/swagger.js";
 
 import clientRouter from "./modules/client/client.routes.js";
 import pharmInfoRouter from "./modules/pharmInfo/pharmInfo.routes.js";
@@ -19,12 +18,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.get("/test", (req, res) => {
-    console.log("test before");
-    res.send("working");
-});
-console.log("test after");
 app.use(clientRouter);
 app.use(pharmInfoRouter);
 app.use(medicationRouter);
