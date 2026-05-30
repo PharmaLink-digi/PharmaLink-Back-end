@@ -14,6 +14,13 @@ export const getClientById = async (id) => {
     return data;
 };
 
+// Get by Email
+export const getClientByEmail = async (email) => {
+    const { data, error } = await supabase.from("t_client").select("*").eq("email", email).maybeSingle();
+    if (error) throw error;
+    return data;
+};
+
 // Insert
 export const insertClient = async (item) => {
     const { data, error } = await supabase.from("t_client").insert([item]).select().single();

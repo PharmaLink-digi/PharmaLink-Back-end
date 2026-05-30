@@ -11,13 +11,20 @@ import ordersRouter from "./modules/orders/orders.routes.js";
 import orderDetailsRouter from "./modules/orderDetails/orderDetails.routes.js";
 import salesRouter from "./modules/sales/sales.routes.js";
 import exchangePharmRouter from "./modules/exchangePharm/exchangePharm.routes.js";
+import searchRouter from "./modules/search/search.routes.js";
+import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:3000', 'https://pharmalink-back-end.onrender.com'], // Adjust port if frontend runs elsewhere
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
+app.use(authRouter);
 app.use(clientRouter);
 app.use(pharmInfoRouter);
 app.use(medicationRouter);
@@ -28,6 +35,8 @@ app.use(ordersRouter);
 app.use(orderDetailsRouter);
 app.use(salesRouter);
 app.use(exchangePharmRouter);
+
+app.use("/search", searchRouter);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
