@@ -2,9 +2,25 @@ import { supabase } from "./supabase.js";
 
 // Get all
 export const getAllMedications = async () => {
-    const { data, error } = await supabase.from("t_medication").select("*");
-    if (error) throw error;
-    return data;
+    const { data: medications, error: medError } = await supabase.from("t_medication").select("*");
+    if (medError) throw medError;
+
+    const { data: inventory, error: invError } = await supabase.from("t_pharm_inventory").select("medication_id, price_sell");
+    if (invError) throw invError;
+    
+    
+    const priceMap = {};
+    for (const inv of inventory) {
+        if (!priceMap[inv.medication_id] || inv.price_sell < priceMap[inv.medication_id]) {
+            priceMap[inv.medication_id] = inv.price_sell;
+        }
+    }
+    
+
+    return medications.map(med => ({
+        ...med,
+        lowest_price: priceMap[med.medication_id] ?? null
+    }));
 };
 
 // Get by ID
