@@ -7,12 +7,11 @@ const MAX_CACHE_SIZE = 500;
 
 export const searchMedicines = async (req, res) => {
     try {
-        // 1. Receive the search query from the frontend
-        // Accept either 'query' or 'name' (frontend will send 'query', but fallback to 'name' or 'q')
-        const queryTerm = req.query.query || req.query.name || req.query.q;
+        // 1. Receive the search query from the request URL
+        const originalQuery = req.query.query;
 
-        if (!queryTerm) {
-            return res.status(400).json({ error: "Search query is required" });
+        if (!originalQuery) {
+            return res.status(400).json({ error: "Search query (query) is required" });
         }
 
         const normalizedQuery = queryTerm.trim().toLowerCase();
@@ -26,77 +25,63 @@ export const searchMedicines = async (req, res) => {
 
         // 2. Call FastAPI spell checker API
         try {
-            const fastApiUrl = process.env.FASTAPI_URL || "https://autocorrectmodel.onrender.com/correct";
-            
-            const aiResponse = await axios.post(fastApiUrl, {
-                name: normalizedQuery // AI service MUST ONLY use field: "name"
+            const aiResponse = await axios.post("https://autocorrectmodel.onrender.com/correct", {
+                name: originalQuery
             });
 
-            // 3. Get corrected medicine name
+            // 3. Receive the corrected word
             if (aiResponse.data && aiResponse.data.correct_name_en) {
-                correctedName = aiResponse.data.correct_name_en;
+                correctedQuery = aiResponse.data.correct_name_en;
             }
         } catch (aiError) {
             // 5. Improve error handling: If FastAPI fails → fallback to original query
             console.error("FastAPI API failed, falling back to original query:", aiError.message);
         }
 
-        // 4. Search medicines from Database using the corrected word
-        // Query Supabase using existing schema fields on t_medication
-        const { data: searchResults, error: medError } = await supabase
+        // 4. Search medicines from Supabase using the corrected word
+        const { data: medications, error } = await supabase
             .from("t_medication")
             .select("*")
-            .ilike("medication_name", `%${correctedName}%`);
+            .ilike("medication_name", `%${correctedQuery}%`);
 
         if (medError) {
             console.error("Database search error:", medError);
             return res.status(500).json({ error: "Failed to search medicines in database" });
         }
 
-        // 5. Improve error handling: If DB not found → return proper 404 response
-        if (!searchResults || searchResults.length === 0) {
-            return res.status(404).json({ 
-                error: "No medicines found",
-                corrected_name_tried: correctedName
+        if (!medications || medications.length === 0) {
+            return res.status(404).json({
+                original_query: originalQuery,
+                corrected_query: correctedQuery,
+                results: []
             });
         }
 
-        // Fetch pricing to match getAllMedications format and map the result
-        const medIds = searchResults.map(m => m.medication_id);
+        // Fetch prices to match getAllMedications behavior
         const { data: inventory, error: invError } = await supabase
             .from("t_pharm_inventory")
-            .select("medication_id, price_sell")
-            .in("medication_id", medIds);
+            .select("medication_id, price_sell");
 
-        const priceMap = {};
-        if (inventory) {
+        let searchResults = medications;
+        if (!invError && inventory) {
+            const priceMap = {};
             for (const inv of inventory) {
                 if (!priceMap[inv.medication_id] || inv.price_sell < priceMap[inv.medication_id]) {
                     priceMap[inv.medication_id] = inv.price_sell;
                 }
             }
+            searchResults = medications.map(med => ({
+                ...med,
+                lowest_price: priceMap[med.medication_id] ?? null
+            }));
         }
 
-        // Map results with lowest_price as expected by the frontend
-        const formattedResults = searchResults.map(med => ({
-            ...med,
-            lowest_price: priceMap[med.medication_id] ?? null
-        }));
-
-        const responseData = {
-            original_query: queryTerm,
-            corrected_query: correctedName,
-            results: formattedResults
-        };
-
-        // Cache the successful result
-        searchCache.set(normalizedQuery, responseData);
-        if (searchCache.size > MAX_CACHE_SIZE) {
-            const firstKey = searchCache.keys().next().value;
-            searchCache.delete(firstKey);
-        }
-
-        return res.json(responseData);
+        // 5. Return original query, corrected query, and search results
+        return res.json({
+            original_query: originalQuery,
+            corrected_query: correctedQuery,
+            results: searchResults
+        });
 
     } catch (error) {
         console.error("Server error:", error);
