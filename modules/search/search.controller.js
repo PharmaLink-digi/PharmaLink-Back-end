@@ -4,23 +4,23 @@ import { supabase } from "../../database/supabase.js";
 export const searchMedicines = async (req, res) => {
     try {
         // 1. Receive the search query from the request URL
-        const originalQuery = req.query.q;
+        const originalQuery = req.query.query;
 
         if (!originalQuery) {
-            return res.status(400).json({ error: "Search query (q) is required" });
+            return res.status(400).json({ error: "Search query (query) is required" });
         }
 
         let correctedQuery = originalQuery;
 
         // 2. Send the query to the AI autocorrect API using axios
         try {
-            const aiResponse = await axios.post("https://YOUR-AI-ENDPOINT.com/correct", {
-                text: originalQuery
+            const aiResponse = await axios.post("https://autocorrectmodel.onrender.com/correct", {
+                name: originalQuery
             });
 
             // 3. Receive the corrected word
-            if (aiResponse.data && aiResponse.data.corrected) {
-                correctedQuery = aiResponse.data.corrected;
+            if (aiResponse.data && aiResponse.data.correct_name_en) {
+                correctedQuery = aiResponse.data.correct_name_en;
             }
         } catch (aiError) {
             // FALLBACK: If the AI API fails, log error and continue with the original query
@@ -28,15 +28,41 @@ export const searchMedicines = async (req, res) => {
         }
 
         // 4. Search medicines from Supabase using the corrected word
-        // using ilike for case-insensitive search on the "name" column
-        const { data: searchResults, error } = await supabase
-            .from("medicines")
+        const { data: medications, error } = await supabase
+            .from("t_medication")
             .select("*")
-            .ilike("name", `%${correctedQuery}%`);
+            .ilike("medication_name", `%${correctedQuery}%`);
 
         if (error) {
             console.error("Supabase search error:", error);
             return res.status(500).json({ error: "Failed to search medicines in database" });
+        }
+
+        if (!medications || medications.length === 0) {
+            return res.status(404).json({
+                original_query: originalQuery,
+                corrected_query: correctedQuery,
+                results: []
+            });
+        }
+
+        // Fetch prices to match getAllMedications behavior
+        const { data: inventory, error: invError } = await supabase
+            .from("t_pharm_inventory")
+            .select("medication_id, price_sell");
+
+        let searchResults = medications;
+        if (!invError && inventory) {
+            const priceMap = {};
+            for (const inv of inventory) {
+                if (!priceMap[inv.medication_id] || inv.price_sell < priceMap[inv.medication_id]) {
+                    priceMap[inv.medication_id] = inv.price_sell;
+                }
+            }
+            searchResults = medications.map(med => ({
+                ...med,
+                lowest_price: priceMap[med.medication_id] ?? null
+            }));
         }
 
         // 5. Return original query, corrected query, and search results

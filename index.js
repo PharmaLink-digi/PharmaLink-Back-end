@@ -23,6 +23,7 @@ app.use(cors());
 app.use(authRouter);
 app.use(clientRouter);
 app.use(pharmInfoRouter);
+app.use("/medications/search", searchRouter);
 app.use(medicationRouter);
 app.use(warehouseRouter);
 app.use(warehouseInventoryRouter);
@@ -31,8 +32,6 @@ app.use(ordersRouter);
 app.use(orderDetailsRouter);
 app.use(salesRouter);
 app.use(exchangePharmRouter);
-
-app.use("/search", searchRouter);
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
