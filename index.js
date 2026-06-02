@@ -11,7 +11,7 @@ import ordersRouter from "./modules/orders/orders.routes.js";
 import orderDetailsRouter from "./modules/orderDetails/orderDetails.routes.js";
 import salesRouter from "./modules/sales/sales.routes.js";
 import exchangePharmRouter from "./modules/exchangePharm/exchangePharm.routes.js";
-import searchRouter from "./modules/search/search.routes.js";
+
 import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();
@@ -32,7 +32,7 @@ app.use(orderDetailsRouter);
 app.use(salesRouter);
 app.use(exchangePharmRouter);
 
-app.use("/search", searchRouter);
+
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

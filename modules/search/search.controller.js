@@ -1,50 +1,102 @@
 import axios from "axios";
 import { supabase } from "../../database/supabase.js";
 
+// Basic LRU-like in-memory cache to avoid repeated API calls
+const searchCache = new Map();
+const MAX_CACHE_SIZE = 500;
+
 export const searchMedicines = async (req, res) => {
     try {
-        // 1. Receive the search query from the request URL
-        const originalQuery = req.query.q;
+        // 1. Receive the search query from the frontend
+        // Accept either 'query' or 'name' (frontend will send 'query', but fallback to 'name' or 'q')
+        const queryTerm = req.query.query || req.query.name || req.query.q;
 
-        if (!originalQuery) {
-            return res.status(400).json({ error: "Search query (q) is required" });
+        if (!queryTerm) {
+            return res.status(400).json({ error: "Search query is required" });
         }
 
-        let correctedQuery = originalQuery;
+        const normalizedQuery = queryTerm.trim().toLowerCase();
 
-        // 2. Send the query to the AI autocorrect API using axios
+        // 6. Basic Caching: check if we already have the results
+        if (searchCache.has(normalizedQuery)) {
+            return res.json(searchCache.get(normalizedQuery));
+        }
+
+        let correctedName = normalizedQuery;
+
+        // 2. Call FastAPI spell checker API
         try {
-            const aiResponse = await axios.post("https://YOUR-AI-ENDPOINT.com/correct", {
-                text: originalQuery
+            const fastApiUrl = process.env.FASTAPI_URL || "https://autocorrectmodel.onrender.com/correct";
+            
+            const aiResponse = await axios.post(fastApiUrl, {
+                name: normalizedQuery // AI service MUST ONLY use field: "name"
             });
 
-            // 3. Receive the corrected word
-            if (aiResponse.data && aiResponse.data.corrected) {
-                correctedQuery = aiResponse.data.corrected;
+            // 3. Get corrected medicine name
+            if (aiResponse.data && aiResponse.data.correct_name_en) {
+                correctedName = aiResponse.data.correct_name_en;
             }
         } catch (aiError) {
-            // FALLBACK: If the AI API fails, log error and continue with the original query
-            console.error("AI API failed, falling back to original query:", aiError.message);
+            // 5. Improve error handling: If FastAPI fails → fallback to original query
+            console.error("FastAPI API failed, falling back to original query:", aiError.message);
         }
 
-        // 4. Search medicines from Supabase using the corrected word
-        // using ilike for case-insensitive search on the "name" column
-        const { data: searchResults, error } = await supabase
-            .from("medicines")
+        // 4. Search medicines from Database using the corrected word
+        // Query Supabase using existing schema fields on t_medication
+        const { data: searchResults, error: medError } = await supabase
+            .from("t_medication")
             .select("*")
-            .ilike("name", `%${correctedQuery}%`);
+            .ilike("medication_name", `%${correctedName}%`);
 
-        if (error) {
-            console.error("Supabase search error:", error);
+        if (medError) {
+            console.error("Database search error:", medError);
             return res.status(500).json({ error: "Failed to search medicines in database" });
         }
 
-        // 5. Return original query, corrected query, and search results
-        return res.json({
-            original_query: originalQuery,
-            corrected_query: correctedQuery,
-            results: searchResults
-        });
+        // 5. Improve error handling: If DB not found → return proper 404 response
+        if (!searchResults || searchResults.length === 0) {
+            return res.status(404).json({ 
+                error: "No medicines found",
+                corrected_name_tried: correctedName
+            });
+        }
+
+        // Fetch pricing to match getAllMedications format and map the result
+        const medIds = searchResults.map(m => m.medication_id);
+        const { data: inventory, error: invError } = await supabase
+            .from("t_pharm_inventory")
+            .select("medication_id, price_sell")
+            .in("medication_id", medIds);
+
+        const priceMap = {};
+        if (inventory) {
+            for (const inv of inventory) {
+                if (!priceMap[inv.medication_id] || inv.price_sell < priceMap[inv.medication_id]) {
+                    priceMap[inv.medication_id] = inv.price_sell;
+                }
+            }
+        }
+
+        // Map results with lowest_price as expected by the frontend
+        const formattedResults = searchResults.map(med => ({
+            ...med,
+            lowest_price: priceMap[med.medication_id] ?? null
+        }));
+
+        const responseData = {
+            original_query: queryTerm,
+            corrected_query: correctedName,
+            results: formattedResults
+        };
+
+        // Cache the successful result
+        searchCache.set(normalizedQuery, responseData);
+        if (searchCache.size > MAX_CACHE_SIZE) {
+            const firstKey = searchCache.keys().next().value;
+            searchCache.delete(firstKey);
+        }
+
+        return res.json(responseData);
 
     } catch (error) {
         console.error("Server error:", error);
