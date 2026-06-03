@@ -14,14 +14,14 @@ export const searchMedicines = async (req, res) => {
             return res.status(400).json({ error: "Search query (query) is required" });
         }
 
-        const normalizedQuery = queryTerm.trim().toLowerCase();
+        const normalizedQuery = originalQuery.trim().toLowerCase();
 
         // 6. Basic Caching: check if we already have the results
         if (searchCache.has(normalizedQuery)) {
             return res.json(searchCache.get(normalizedQuery));
         }
 
-        let correctedName = normalizedQuery;
+        let correctedQuery = normalizedQuery;
 
         // 2. Call FastAPI spell checker API
         try {
@@ -44,8 +44,8 @@ export const searchMedicines = async (req, res) => {
             .select("*")
             .ilike("medication_name", `%${correctedQuery}%`);
 
-        if (medError) {
-            console.error("Database search error:", medError);
+        if (error) {
+            console.error("Database search error:", error);
             return res.status(500).json({ error: "Failed to search medicines in database" });
         }
 

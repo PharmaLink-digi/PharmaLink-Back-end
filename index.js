@@ -11,7 +11,7 @@ import ordersRouter from "./modules/orders/orders.routes.js";
 import orderDetailsRouter from "./modules/orderDetails/orderDetails.routes.js";
 import salesRouter from "./modules/sales/sales.routes.js";
 import exchangePharmRouter from "./modules/exchangePharm/exchangePharm.routes.js";
-
+import router from "./modules/search/search.routes.js";
 import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(cors());
 app.use(authRouter);
 app.use(clientRouter);
 app.use(pharmInfoRouter);
-app.use("/medications/search", searchRouter);
+app.use("/medications/search", router);
 app.use(medicationRouter);
 app.use(warehouseRouter);
 app.use(warehouseInventoryRouter);
