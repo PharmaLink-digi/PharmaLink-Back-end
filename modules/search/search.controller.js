@@ -28,17 +28,19 @@ console.log("originalQuery:", originalQuery);
         try {
             const aiResponse = await axios.post("https://autocorrectmodel.onrender.com/correct", {
                 name: originalQuery
+            }, {
+                timeout: 3000 // Add a timeout to prevent hanging
             });
 
             // 3. Receive the corrected word
             if (aiResponse.data && aiResponse.data.correct_name_en) {
                 correctedQuery = aiResponse.data.correct_name_en;
+                console.log("correctedQuery:", correctedQuery);
+                console.log("AI RESPONSE:", aiResponse.data);
             }
-            console.log("correctedQuery:", correctedQuery);
-console.log("AI RESPONSE:", aiResponse.data);
         } catch (aiError) {
             // 5. Improve error handling: If FastAPI fails → fallback to original query
-            console.error("FastAPI API failed, falling back to original query:", aiError.message);
+            console.warn("FastAPI API failed (e.g. 429) or timed out, falling back to original query:", aiError.message);
         }
 
         // Extract root keyword (first word of the corrected query)
@@ -86,7 +88,7 @@ console.log("AI RESPONSE:", aiResponse.data);
         }
 
         if (!sortedMedications || sortedMedications.length === 0) {
-            return res.status(404).json({
+            return res.status(200).json({
                 original_query: originalQuery,
                 corrected_query: correctedQuery,
                 results: []
