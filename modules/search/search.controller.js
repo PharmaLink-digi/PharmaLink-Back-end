@@ -9,7 +9,8 @@ export const searchMedicines = async (req, res) => {
     try {
         // 1. Receive the search query from the request URL
         const originalQuery = req.query.query;
-
+console.log("QUERY FLOW START");
+console.log("originalQuery:", originalQuery);
         if (!originalQuery) {
             return res.status(400).json({ error: "Search query (query) is required" });
         }
@@ -33,6 +34,8 @@ export const searchMedicines = async (req, res) => {
             if (aiResponse.data && aiResponse.data.correct_name_en) {
                 correctedQuery = aiResponse.data.correct_name_en;
             }
+            console.log("correctedQuery:", correctedQuery);
+console.log("AI RESPONSE:", aiResponse.data);
         } catch (aiError) {
             // 5. Improve error handling: If FastAPI fails → fallback to original query
             console.error("FastAPI API failed, falling back to original query:", aiError.message);
