@@ -48,7 +48,9 @@ export const searchMedicines = async (req, res) => {
             console.error("Database search error:", error);
             return res.status(500).json({ error: "Failed to search medicines in database" });
         }
-
+console.log("original:", originalQuery);
+console.log("corrected:", correctedQuery);
+console.log("medications:", medications);
         if (!medications || medications.length === 0) {
             return res.status(404).json({
                 original_query: originalQuery,
