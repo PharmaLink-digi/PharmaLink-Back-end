@@ -38,20 +38,51 @@ export const searchMedicines = async (req, res) => {
             console.error("FastAPI API failed, falling back to original query:", aiError.message);
         }
 
-        // 4. Search medicines from Supabase using the corrected word
+        // Extract root keyword (first word of the corrected query)
+        const rootKeyword = correctedQuery.split(/\s+/)[0];
+
+        // 4. Search medicines from Supabase using OR condition
         const { data: medications, error } = await supabase
             .from("t_medication")
             .select("*")
-            .ilike("medication_name", `%${correctedQuery}%`);
+            .or(`medication_name.ilike.%${rootKeyword}%,medication_name.ilike.%${correctedQuery}%`);
 
         if (error) {
             console.error("Database search error:", error);
             return res.status(500).json({ error: "Failed to search medicines in database" });
         }
-console.log("original:", originalQuery);
-console.log("corrected:", correctedQuery);
-console.log("medications:", medications);
-        if (!medications || medications.length === 0) {
+
+        let sortedMedications = [];
+        if (medications && medications.length > 0) {
+            // Remove duplicates if any based on medication_id
+            const uniqueMap = new Map();
+            medications.forEach(med => {
+                uniqueMap.set(med.medication_id, med);
+            });
+            const uniqueMeds = Array.from(uniqueMap.values());
+
+            // Sort by relevance (exact match > starts with corrected > includes corrected > starts with root > includes root)
+            const lowerCorrected = correctedQuery.toLowerCase();
+            const lowerRoot = rootKeyword.toLowerCase();
+
+            sortedMedications = uniqueMeds.sort((a, b) => {
+                const nameA = a.medication_name.toLowerCase();
+                const nameB = b.medication_name.toLowerCase();
+
+                const getScore = (name) => {
+                    if (name === lowerCorrected) return 50;
+                    if (name.startsWith(lowerCorrected)) return 40;
+                    if (name.includes(lowerCorrected)) return 30;
+                    if (name.startsWith(lowerRoot)) return 20;
+                    if (name.includes(lowerRoot)) return 10;
+                    return 0;
+                };
+
+                return getScore(nameB) - getScore(nameA);
+            });
+        }
+
+        if (!sortedMedications || sortedMedications.length === 0) {
             return res.status(404).json({
                 original_query: originalQuery,
                 corrected_query: correctedQuery,
@@ -64,7 +95,7 @@ console.log("medications:", medications);
             .from("t_pharm_inventory")
             .select("medication_id, price_sell");
 
-        let searchResults = medications;
+        let searchResults = sortedMedications;
         if (!invError && inventory) {
             const priceMap = {};
             for (const inv of inventory) {
@@ -72,7 +103,7 @@ console.log("medications:", medications);
                     priceMap[inv.medication_id] = inv.price_sell;
                 }
             }
-            searchResults = medications.map(med => ({
+            searchResults = sortedMedications.map(med => ({
                 ...med,
                 lowest_price: priceMap[med.medication_id] ?? null
             }));
