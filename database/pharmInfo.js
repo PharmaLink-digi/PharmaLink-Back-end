@@ -1,8 +1,21 @@
 import { supabase } from "./supabase.js";
 
+// Helper to apply filters
+const applyFilters = (query, filters) => {
+    if (filters) {
+        Object.entries(filters).forEach(([key, val]) => {
+            query = query.eq(key, val);
+        });
+    }
+    return query;
+};
+
+
 // Get all
-export const getAllPharmacies = async () => {
-    const { data, error } = await supabase.from("t_pharm_info").select("*");
+export const getAllPharmacies = async (filters = {}) => {
+    let query = supabase.from("t_pharm_info").select("*");
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 };

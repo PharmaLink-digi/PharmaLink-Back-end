@@ -1,8 +1,13 @@
 import * as medicationDB from "../../database/medication.js";
+import { parseIds, parseFilters } from "../../utils/queryParser.js";
+
+const allowedFilters = ['medication_id', 'medication_name', 'medication_type', 'category', 'manufacturer'];
 
 export const getAllMedications = async (req, res) => {
     try {
-        const data = await medicationDB.getAllMedications();
+        const ids = parseIds(req);
+        const filters = parseFilters(req, allowedFilters);
+        const data = ids ? await medicationDB.getMedicationsByIds(ids, filters) : await medicationDB.getAllMedications(filters);
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });

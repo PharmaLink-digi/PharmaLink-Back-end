@@ -6,7 +6,8 @@ const pharmInventoryRouter = express.Router();
 pharmInventoryRouter.get('/pharm-inventory', pharmInventoryController.getAllPharmInventory);
 pharmInventoryRouter.get('/pharm-inventory/:id', pharmInventoryController.getPharmInventoryById);
 pharmInventoryRouter.post('/pharm-inventory', pharmInventoryController.insertPharmInventory);
-pharmInventoryRouter.put('/pharm-inventory/:id', pharmInventoryController.updatePharmInventory);
+pharmInventoryRouter.patch('/pharm-inventory/:id', pharmInventoryController.updatePharmInventory);
 pharmInventoryRouter.delete('/pharm-inventory/:id', pharmInventoryController.deletePharmInventory);
+pharmInventoryRouter.delete('/pharm-inventory', pharmInventoryController.deletePharmInventory);
 
 export default pharmInventoryRouter;

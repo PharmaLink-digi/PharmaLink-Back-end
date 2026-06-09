@@ -1,21 +1,34 @@
 import { supabase } from "./supabase.js";
 
+// Helper to apply filters
+const applyFilters = (query, filters) => {
+    if (filters) {
+        Object.entries(filters).forEach(([key, val]) => {
+            query = query.eq(key, val);
+        });
+    }
+    return query;
+};
+
+
 // Get all
-export const getAllMedications = async () => {
-    const { data: medications, error: medError } = await supabase.from("t_medication").select("*");
+export const getAllMedications = async (filters = {}) => {
+    let query = supabase.from("t_medication").select("*");
+    query = applyFilters(query, filters);
+    const { data: medications, error: medError } = await query;
     if (medError) throw medError;
 
     const { data: inventory, error: invError } = await supabase.from("t_pharm_inventory").select("medication_id, price_sell");
     if (invError) throw invError;
-    
-    
+
+
     const priceMap = {};
     for (const inv of inventory) {
         if (!priceMap[inv.medication_id] || inv.price_sell < priceMap[inv.medication_id]) {
             priceMap[inv.medication_id] = inv.price_sell;
         }
     }
-    
+
 
     return medications.map(med => ({
         ...med,
@@ -47,6 +60,19 @@ export const updateMedication = async (id, updates) => {
 // Delete
 export const deleteMedication = async (id) => {
     const { data, error } = await supabase.from("t_medication").delete().eq("medication_id", id);
+    if (error) throw error;
+    return data;
+};
+export const getMedicationsByIds = async (ids, filters = {}) => {
+    let query = supabase.from("t_medication").select("*").in('medication_id', ids);
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+};
+
+export const deleteMedicationsByIds = async (ids) => {
+    const { data, error } = await supabase.from("t_medication").delete().in('medication_id', ids);
     if (error) throw error;
     return data;
 };

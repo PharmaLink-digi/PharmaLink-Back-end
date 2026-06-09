@@ -1,8 +1,21 @@
 import { supabase } from "./supabase.js";
 
+// Helper to apply filters
+const applyFilters = (query, filters) => {
+    if (filters) {
+        Object.entries(filters).forEach(([key, val]) => {
+            query = query.eq(key, val);
+        });
+    }
+    return query;
+};
+
+
 // Get all
-export const getAllOrderDetails = async () => {
-    const { data, error } = await supabase.from("t_order_details").select("*");
+export const getAllOrderDetails = async (filters = {}) => {
+    let query = supabase.from("t_order_details").select("*");
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 };
@@ -31,6 +44,19 @@ export const updateOrderDetail = async (id, updates) => {
 // Delete
 export const deleteOrderDetail = async (id) => {
     const { data, error } = await supabase.from("t_order_details").delete().eq("order_detail_id", id);
+    if (error) throw error;
+    return data;
+};
+export const getOrderDetailsByIds = async (ids, filters = {}) => {
+    let query = supabase.from("t_order_details").select("*").in('order_detail_id', ids);
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+};
+
+export const deleteOrderDetailsByIds = async (ids) => {
+    const { data, error } = await supabase.from("t_order_details").delete().in('order_detail_id', ids);
     if (error) throw error;
     return data;
 };

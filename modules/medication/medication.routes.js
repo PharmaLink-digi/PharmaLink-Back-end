@@ -8,7 +8,8 @@ medicationRouter.get('/medications', medicationController.getAllMedications);
 medicationRouter.get('/medications/search', searchMedicines);
 medicationRouter.get('/medications/:id', medicationController.getMedicationById);
 medicationRouter.post('/medications', medicationController.insertMedication);
-medicationRouter.put('/medications/:id', medicationController.updateMedication);
+medicationRouter.patch('/medications/:id', medicationController.updateMedication);
 medicationRouter.delete('/medications/:id', medicationController.deleteMedication);
+medicationRouter.delete('/medications', medicationController.deleteMedication);
 
 export default medicationRouter;

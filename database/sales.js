@@ -1,8 +1,21 @@
 import { supabase } from "./supabase.js";
 
+// Helper to apply filters
+const applyFilters = (query, filters) => {
+    if (filters) {
+        Object.entries(filters).forEach(([key, val]) => {
+            query = query.eq(key, val);
+        });
+    }
+    return query;
+};
+
+
 // Get all
-export const getAllSales = async () => {
-    const { data, error } = await supabase.from("sales").select("*");
+export const getAllSales = async (filters = {}) => {
+    let query = supabase.from("sales").select("*");
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 };
@@ -31,6 +44,19 @@ export const updateSale = async (id, updates) => {
 // Delete
 export const deleteSale = async (id) => {
     const { data, error } = await supabase.from("sales").delete().eq("sale_id", id);
+    if (error) throw error;
+    return data;
+};
+export const getSalesByIds = async (ids, filters = {}) => {
+    let query = supabase.from("sales").select("*").in('sale_id', ids);
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+};
+
+export const deleteSalesByIds = async (ids) => {
+    const { data, error } = await supabase.from("sales").delete().in('sale_id', ids);
     if (error) throw error;
     return data;
 };

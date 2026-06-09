@@ -1,8 +1,21 @@
 import { supabase } from "./supabase.js";
 
+// Helper to apply filters
+const applyFilters = (query, filters) => {
+    if (filters) {
+        Object.entries(filters).forEach(([key, val]) => {
+            query = query.eq(key, val);
+        });
+    }
+    return query;
+};
+
+
 // Get all
-export const getAllWarehouseInventory = async () => {
-    const { data, error } = await supabase.from("t_warehouse_inventory").select("*");
+export const getAllWarehouseInventory = async (filters = {}) => {
+    let query = supabase.from("t_warehouse_inventory").select("*");
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
 };
@@ -31,6 +44,19 @@ export const updateWarehouseInventory = async (id, updates) => {
 // Delete
 export const deleteWarehouseInventory = async (id) => {
     const { data, error } = await supabase.from("t_warehouse_inventory").delete().eq("w_inventory_id", id);
+    if (error) throw error;
+    return data;
+};
+export const getWarehouseInventoriesByIds = async (ids, filters = {}) => {
+    let query = supabase.from("t_warehouse_inventory").select("*").in('w_inventory_id', ids);
+    query = applyFilters(query, filters);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+};
+
+export const deleteWarehouseInventoriesByIds = async (ids) => {
+    const { data, error } = await supabase.from("t_warehouse_inventory").delete().in('w_inventory_id', ids);
     if (error) throw error;
     return data;
 };

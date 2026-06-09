@@ -6,7 +6,8 @@ const pharmInfoRouter = express.Router();
 pharmInfoRouter.get('/pharm-info', pharmInfoController.getAllPharmacies);
 pharmInfoRouter.get('/pharm-info/:id', pharmInfoController.getPharmacyById);
 pharmInfoRouter.post('/pharm-info', pharmInfoController.insertPharmacy);
-pharmInfoRouter.put('/pharm-info/:id', pharmInfoController.updatePharmacy);
+pharmInfoRouter.patch('/pharm-info/:id', pharmInfoController.updatePharmacy);
 pharmInfoRouter.delete('/pharm-info/:id', pharmInfoController.deletePharmacy);
+pharmInfoRouter.delete('/pharm-info', pharmInfoController.deletePharmacy);
 
 export default pharmInfoRouter;

@@ -1,4 +1,12 @@
-import * as salesDB from "../../database/sales.js";
+import fs from 'fs';
+import path from 'path';
+
+const filePath = path.resolve('./modules/sales/sales.controller.js');
+let content = fs.readFileSync(filePath, 'utf-8');
+
+content = content.replace(
+    'import * as salesDB from "../../database/sales.js";\nimport { parseIds } from "../../utils/queryParser.js";',
+    `import * as salesDB from "../../database/sales.js";
 import * as ordersDB from "../../database/orders.js";
 import * as clientDB from "../../database/dbclient.js";
 import * as pharmInfoDB from "../../database/pharmInfo.js";
@@ -48,60 +56,33 @@ const validateFKs = async (payload) => {
         const m = await medicationDB.getMedicationById(payload.medication_id).catch(()=>null);
         if (!m) throw new Error("Invalid medication_id");
     }
-};
+};`
+);
 
-export const getAllSales = async (req, res) => {
-    try {
-        const ids = parseIds(req);
-        const filters = parseFilters(req, allowedFilters);
-        const rawData = ids ? await salesDB.getSalesByIds(ids, filters) : await salesDB.getAllSales(filters);
-        const data = await Promise.all(rawData.map(enrichSale));
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const getAllSales = async \(req, res\) => {([\s\S]*?)const ids = parseIds\(req\);([\s\S]*?)const data = ids \? await salesDB\.getSalesByIds\(ids\) : await salesDB\.getAllSales\(\);([\s\S]*?)res\.status\(200\)\.json\(data\);/m,
+    `export const getAllSales = async (req, res) => {$1const ids = parseIds(req);
+        const filters = parseFilters(req.query, allowedFilters);$2const rawData = ids ? await salesDB.getSalesByIds(ids, filters) : await salesDB.getAllSales(filters);
+        const data = await Promise.all(rawData.map(enrichSale));$3res.status(200).json(data);`
+);
 
-export const getSaleById = async (req, res) => {
-    try {
-        const rawData = await salesDB.getSaleById(req.params.id);
-        const data = await enrichSale(rawData);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const getSaleById = async \(req, res\) => {([\s\S]*?)const data = await salesDB\.getSaleById\(req\.params\.id\);([\s\S]*?)res\.status\(200\)\.json\(data\);/m,
+    `export const getSaleById = async (req, res) => {$1const rawData = await salesDB.getSaleById(req.params.id);
+        const data = await enrichSale(rawData);$2res.status(200).json(data);`
+);
 
-export const insertSale = async (req, res) => {
-    try {
-        await validateFKs(req.body);
-        const data = await salesDB.insertSale(req.body);
-        res.status(201).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const insertSale = async \(req, res\) => {([\s\S]*?)const data = await salesDB\.insertSale\(req\.body\);/m,
+    `export const insertSale = async (req, res) => {$1await validateFKs(req.body);
+        const data = await salesDB.insertSale(req.body);`
+);
 
-export const updateSale = async (req, res) => {
-    try {
-        await validateFKs(req.body);
-        const data = await salesDB.updateSale(req.params.id, req.body);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const updateSale = async \(req, res\) => {([\s\S]*?)const data = await salesDB\.updateSale\(req\.params\.id, req\.body\);/m,
+    `export const updateSale = async (req, res) => {$1await validateFKs(req.body);
+        const data = await salesDB.updateSale(req.params.id, req.body);`
+);
 
-export const deleteSale = async (req, res) => {
-    try {
-        const ids = parseIds(req);
-        if (ids) {
-            const data = await salesDB.deleteSalesByIds(ids);
-            return res.status(200).json({ deletedIds: ids, result: data });
-        }
-        const data = await salesDB.deleteSale(req.params.id);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+fs.writeFileSync(filePath, content, 'utf-8');
+console.log("Patched sales.controller.js");

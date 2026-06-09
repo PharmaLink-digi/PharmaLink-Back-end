@@ -1,4 +1,12 @@
-import * as orderDetailsDB from "../../database/orderDetails.js";
+import fs from 'fs';
+import path from 'path';
+
+const filePath = path.resolve('./modules/orderDetails/orderDetails.controller.js');
+let content = fs.readFileSync(filePath, 'utf-8');
+
+content = content.replace(
+    'import * as orderDetailsDB from "../../database/orderDetails.js";\nimport { parseIds } from "../../utils/queryParser.js";',
+    `import * as orderDetailsDB from "../../database/orderDetails.js";
 import * as ordersDB from "../../database/orders.js";
 import * as salesDB from "../../database/sales.js";
 import * as clientDB from "../../database/dbclient.js";
@@ -54,60 +62,33 @@ const validateFKs = async (payload) => {
         const m = await medicationDB.getMedicationById(payload.medication_id).catch(()=>null);
         if (!m) throw new Error("Invalid medication_id");
     }
-};
+};`
+);
 
-export const getAllOrderDetails = async (req, res) => {
-    try {
-        const ids = parseIds(req);
-        const filters = parseFilters(req, allowedFilters);
-        const rawData = ids ? await orderDetailsDB.getOrderDetailsByIds(ids, filters) : await orderDetailsDB.getAllOrderDetails(filters);
-        const data = await Promise.all(rawData.map(enrichOrderDetail));
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const getAllOrderDetails = async \(req, res\) => {([\s\S]*?)const ids = parseIds\(req\);([\s\S]*?)const data = ids \? await orderDetailsDB\.getOrderDetailsByIds\(ids\) : await orderDetailsDB\.getAllOrderDetails\(\);([\s\S]*?)res\.status\(200\)\.json\(data\);/m,
+    `export const getAllOrderDetails = async (req, res) => {$1const ids = parseIds(req);
+        const filters = parseFilters(req.query, allowedFilters);$2const rawData = ids ? await orderDetailsDB.getOrderDetailsByIds(ids, filters) : await orderDetailsDB.getAllOrderDetails(filters);
+        const data = await Promise.all(rawData.map(enrichOrderDetail));$3res.status(200).json(data);`
+);
 
-export const getOrderDetailById = async (req, res) => {
-    try {
-        const rawData = await orderDetailsDB.getOrderDetailById(req.params.id);
-        const data = await enrichOrderDetail(rawData);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const getOrderDetailById = async \(req, res\) => {([\s\S]*?)const data = await orderDetailsDB\.getOrderDetailById\(req\.params\.id\);([\s\S]*?)res\.status\(200\)\.json\(data\);/m,
+    `export const getOrderDetailById = async (req, res) => {$1const rawData = await orderDetailsDB.getOrderDetailById(req.params.id);
+        const data = await enrichOrderDetail(rawData);$2res.status(200).json(data);`
+);
 
-export const insertOrderDetail = async (req, res) => {
-    try {
-        await validateFKs(req.body);
-        const data = await orderDetailsDB.insertOrderDetail(req.body);
-        res.status(201).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const insertOrderDetail = async \(req, res\) => {([\s\S]*?)const data = await orderDetailsDB\.insertOrderDetail\(req\.body\);/m,
+    `export const insertOrderDetail = async (req, res) => {$1await validateFKs(req.body);
+        const data = await orderDetailsDB.insertOrderDetail(req.body);`
+);
 
-export const updateOrderDetail = async (req, res) => {
-    try {
-        await validateFKs(req.body);
-        const data = await orderDetailsDB.updateOrderDetail(req.params.id, req.body);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+content = content.replace(
+    /export const updateOrderDetail = async \(req, res\) => {([\s\S]*?)const data = await orderDetailsDB\.updateOrderDetail\(req\.params\.id, req\.body\);/m,
+    `export const updateOrderDetail = async (req, res) => {$1await validateFKs(req.body);
+        const data = await orderDetailsDB.updateOrderDetail(req.params.id, req.body);`
+);
 
-export const deleteOrderDetail = async (req, res) => {
-    try {
-        const ids = parseIds(req);
-        if (ids) {
-            const data = await orderDetailsDB.deleteOrderDetailsByIds(ids);
-            return res.status(200).json({ deletedIds: ids, result: data });
-        }
-        const data = await orderDetailsDB.deleteOrderDetail(req.params.id);
-        res.status(200).json(data);
-    } catch (err) {
-        res.status(500).json({ message: err.message });
-    }
-};
+fs.writeFileSync(filePath, content, 'utf-8');
+console.log("Patched orderDetails.controller.js");
