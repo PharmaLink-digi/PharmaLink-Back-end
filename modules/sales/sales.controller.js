@@ -6,10 +6,10 @@ import * as pharmInventoryDB from "../../database/pharmInventory.js";
 import * as warehouseDB from "../../database/warehouse.js";
 import * as medicationDB from "../../database/medication.js";
 import { parseIds, parseFilters } from "../../utils/queryParser.js";
+import { sendEvent, TOPICS } from "../../kafka/producer.js";
 
 const allowedFilters = ['sale_id', 'order_id', 'client_id', 'pharm_id', 'inventory_id', 'warehouse_id', 'medication_id'];
 
-// Helper for enrichment
 const enrichSale = async (item) => {
     const [order, client, pharmacy, inventory, warehouse, medication] = await Promise.all([
         item.order_id ? ordersDB.getOrderById(item.order_id).catch(()=>null) : null,
@@ -22,7 +22,6 @@ const enrichSale = async (item) => {
     return { ...item, order, client, pharmacy, inventory, warehouse, medication };
 };
 
-// Helper for validation
 const validateFKs = async (payload) => {
     if (payload.order_id) {
         const o = await ordersDB.getOrderById(payload.order_id).catch(()=>null);
@@ -76,6 +75,21 @@ export const insertSale = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await salesDB.insertSale(req.body);
+        await sendEvent(TOPICS.SALES, 'SALE_COMPLETED', data.pharm_id, {
+            sale_id:          data.sale_id,
+            order_id:         data.order_id,
+            client_id:        data.client_id,
+            pharm_id:         data.pharm_id,
+            pharm_name:       data.pharm_name ?? null,
+            inventory_id:     data.inventory_id,
+            warehouse_id:     data.warehouse_id,
+            medication_id:    data.medication_id,
+            medication_name:  data.medication_name ?? null,
+            quantity_ordered: data.quantity_ordered,
+            price_per_unit:   data.price_per_unit,
+            total_sales:      data.total_sales,
+            date_out:         data.date_out ?? null,
+        });
         res.status(201).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -86,6 +100,21 @@ export const updateSale = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await salesDB.updateSale(req.params.id, req.body);
+        await sendEvent(TOPICS.SALES, 'SALE_COMPLETED', data.pharm_id, {
+            sale_id:          data.sale_id,
+            order_id:         data.order_id,
+            client_id:        data.client_id,
+            pharm_id:         data.pharm_id,
+            pharm_name:       data.pharm_name ?? null,
+            inventory_id:     data.inventory_id,
+            warehouse_id:     data.warehouse_id,
+            medication_id:    data.medication_id,
+            medication_name:  data.medication_name ?? null,
+            quantity_ordered: data.quantity_ordered,
+            price_per_unit:   data.price_per_unit,
+            total_sales:      data.total_sales,
+            date_out:         data.date_out ?? null,
+        });
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });

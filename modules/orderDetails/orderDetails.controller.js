@@ -7,10 +7,10 @@ import * as pharmInventoryDB from "../../database/pharmInventory.js";
 import * as warehouseDB from "../../database/warehouse.js";
 import * as medicationDB from "../../database/medication.js";
 import { parseIds, parseFilters } from "../../utils/queryParser.js";
+import { sendEvent, TOPICS } from "../../kafka/producer.js";
 
 const allowedFilters = ['order_detail_id', 'order_id', 'sale_id', 'client_id', 'pharm_id', 'inventory_id', 'warehouse_id', 'medication_id'];
 
-// Helper for enrichment
 const enrichOrderDetail = async (item) => {
     const [order, sale, client, pharmacy, inventory, warehouse, medication] = await Promise.all([
         item.order_id ? ordersDB.getOrderById(item.order_id).catch(()=>null) : null,
@@ -24,7 +24,6 @@ const enrichOrderDetail = async (item) => {
     return { ...item, order, sale, client, pharmacy, inventory, warehouse, medication };
 };
 
-// Helper for validation
 const validateFKs = async (payload) => {
     if (payload.order_id) {
         const o = await ordersDB.getOrderById(payload.order_id).catch(()=>null);
@@ -82,6 +81,25 @@ export const insertOrderDetail = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await orderDetailsDB.insertOrderDetail(req.body);
+        await sendEvent(TOPICS.ORDER_DETAILS, 'ORDER_DETAIL_CREATED', data.pharm_id, {
+            order_detail_id: data.order_detail_id,
+            order_id:        data.order_id,
+            sale_id:         data.sale_id,
+            client_id:       data.client_id,
+            pharm_id:        data.pharm_id,
+            pharm_name:      data.pharm_name ?? null,
+            warehouse_id:    data.warehouse_id,
+            warehouse_code:  data.warehouse_code ?? null,
+            inventory_id:    data.inventory_id,
+            medication_id:   data.medication_id,
+            medication_name: data.medication_name ?? null,
+            medication_type: data.medication_type ?? null,
+            category:        data.category ?? null,
+            quantity:        data.quantity,
+            unit_price:      data.unit_price,
+            line_total:      data.line_total,
+            order_date:      data.order_date ?? null,
+        });
         res.status(201).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -92,6 +110,25 @@ export const updateOrderDetail = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await orderDetailsDB.updateOrderDetail(req.params.id, req.body);
+        await sendEvent(TOPICS.ORDER_DETAILS, 'ORDER_DETAIL_CREATED', data.pharm_id, {
+            order_detail_id: data.order_detail_id,
+            order_id:        data.order_id,
+            sale_id:         data.sale_id,
+            client_id:       data.client_id,
+            pharm_id:        data.pharm_id,
+            pharm_name:      data.pharm_name ?? null,
+            warehouse_id:    data.warehouse_id,
+            warehouse_code:  data.warehouse_code ?? null,
+            inventory_id:    data.inventory_id,
+            medication_id:   data.medication_id,
+            medication_name: data.medication_name ?? null,
+            medication_type: data.medication_type ?? null,
+            category:        data.category ?? null,
+            quantity:        data.quantity,
+            unit_price:      data.unit_price,
+            line_total:      data.line_total,
+            order_date:      data.order_date ?? null,
+        });
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });

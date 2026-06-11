@@ -2,10 +2,10 @@ import * as warehouseInventoryDB from "../../database/warehouseInventory.js";
 import * as warehouseDB from "../../database/warehouse.js";
 import * as medicationDB from "../../database/medication.js";
 import { parseIds, parseFilters } from "../../utils/queryParser.js";
+import { sendEvent, TOPICS } from "../../kafka/producer.js";
 
 const allowedFilters = ['w_inventory_id', 'warehouse_id', 'medication_id', 'category'];
 
-// Helper for enrichment
 const enrichWarehouseInventory = async (item) => {
     const [warehouse, medication] = await Promise.all([
         item.warehouse_id ? warehouseDB.getWarehouseById(item.warehouse_id).catch(()=>null) : null,
@@ -14,7 +14,6 @@ const enrichWarehouseInventory = async (item) => {
     return { ...item, warehouse, medication };
 };
 
-// Helper for validation
 const validateFKs = async (payload) => {
     if (payload.warehouse_id) {
         const w = await warehouseDB.getWarehouseById(payload.warehouse_id).catch(()=>null);
@@ -52,6 +51,17 @@ export const insertWarehouseInventory = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await warehouseInventoryDB.insertWarehouseInventory(req.body);
+        const eventType = data.quantity < 20 ? 'WAREHOUSE_STOCK_LOW' : 'WAREHOUSE_STOCK_UPDATED';
+        await sendEvent(TOPICS.WAREHOUSE_INVENTORY, eventType, `${data.warehouse_id}:${data.medication_id}`, {
+            w_inventory_id: data.w_inventory_id,
+            warehouse_id:   data.warehouse_id,
+            warehouse_code: data.warehouse_code ?? null,
+            medication_id:  data.medication_id,
+            medication_name:data.medication_name ?? null,
+            category:       data.category ?? null,
+            price_per_unit: data.price_per_unit,
+            quantity:       data.quantity,
+        });
         res.status(201).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -62,6 +72,17 @@ export const updateWarehouseInventory = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await warehouseInventoryDB.updateWarehouseInventory(req.params.id, req.body);
+        const eventType = data.quantity < 20 ? 'WAREHOUSE_STOCK_LOW' : 'WAREHOUSE_STOCK_UPDATED';
+        await sendEvent(TOPICS.WAREHOUSE_INVENTORY, eventType, `${data.warehouse_id}:${data.medication_id}`, {
+            w_inventory_id: data.w_inventory_id,
+            warehouse_id:   data.warehouse_id,
+            warehouse_code: data.warehouse_code ?? null,
+            medication_id:  data.medication_id,
+            medication_name:data.medication_name ?? null,
+            category:       data.category ?? null,
+            price_per_unit: data.price_per_unit,
+            quantity:       data.quantity,
+        });
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });

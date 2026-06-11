@@ -4,10 +4,17 @@ import * as medicationDB from "../../database/medication.js";
 import * as pharmInventoryDB from "../../database/pharmInventory.js";
 import * as warehouseDB from "../../database/warehouse.js";
 import { parseIds, parseFilters } from "../../utils/queryParser.js";
+import { sendEvent, TOPICS } from "../../kafka/producer.js";
 
 const allowedFilters = ['request_id', 'from_pharm_id', 'to_pharm_id', 'inventory_id', 'warehouse_id', 'medication_id', 'status'];
 
-// Helper for validation
+const STATUS_EVENT = {
+    Pending:   'EXCHANGE_REQUESTED',
+    Approved:  'EXCHANGE_APPROVED',
+    Completed: 'EXCHANGE_COMPLETED',
+    Rejected:  'EXCHANGE_REJECTED',
+};
+
 const validateFKs = async (payload) => {
     if (payload.from_pharm_id) {
         const p = await pharmInfoDB.getPharmacyById(payload.from_pharm_id).catch(()=>null);
@@ -31,7 +38,6 @@ const validateFKs = async (payload) => {
     }
 };
 
-// Helper to enrich a single exchange record with related entities
 const enrichExchange = async (exchange) => {
     const [fromPharm, toPharm, medication, inventory, warehouse] = await Promise.all([
         pharmInfoDB.getPharmacyById(exchange.from_pharm_id),
@@ -40,17 +46,27 @@ const enrichExchange = async (exchange) => {
         pharmInventoryDB.getPharmInventoryById(exchange.inventory_id),
         warehouseDB.getWarehouseById(exchange.warehouse_id),
     ]);
-    return {
-        ...exchange,
-        from_pharm: fromPharm,
-        to_pharm: toPharm,
-        medication,
-        inventory,
-        warehouse,
-    };
+    return { ...exchange, from_pharm: fromPharm, to_pharm: toPharm, medication, inventory, warehouse };
 };
 
-// GET single
+const buildExchangePayload = (d) => ({
+    request_id:            d.request_id,
+    from_pharm_id:         d.from_pharm_id,
+    from_pharm_name:       d.from_pharm_name ?? null,
+    to_pharm_id:           d.to_pharm_id,
+    to_pharm_name:         d.to_pharm_name ?? null,
+    inventory_id:          d.inventory_id,
+    warehouse_id:          d.warehouse_id,
+    medication_id:         d.medication_id,
+    medication_name:       d.medication_name ?? null,
+    quantity_requested:    d.quantity_requested,
+    price_sell:            d.price_sell,
+    discount_percent:      d.discount_percent ?? 0,
+    price_after_discount:  d.price_after_discount ?? d.price_sell,
+    request_date:          d.request_date ?? null,
+    status:                d.status,
+});
+
 export const getExchangeById = async (req, res) => {
     try {
         const exchange = await exchangePharmDB.getExchangeById(req.params.id);
@@ -61,7 +77,6 @@ export const getExchangeById = async (req, res) => {
     }
 };
 
-// GET all exchanges or filtered by ids
 export const getExchangesByQuery = async (req, res) => {
     try {
         const ids = parseIds(req);
@@ -71,7 +86,6 @@ export const getExchangesByQuery = async (req, res) => {
             const enriched = await Promise.all(exchanges.map(enrichExchange));
             return res.status(200).json(enriched);
         }
-        // No ID – return all enriched
         const all = await exchangePharmDB.getAllExchanges(filters);
         const enrichedAll = await Promise.all(all.map(enrichExchange));
         res.status(200).json(enrichedAll);
@@ -80,34 +94,42 @@ export const getExchangesByQuery = async (req, res) => {
     }
 };
 
-// INSERT new exchange
 export const insertExchange = async (req, res) => {
     try {
         await validateFKs(req.body);
         const data = await exchangePharmDB.insertExchange(req.body);
         const enriched = await enrichExchange(data);
+        await sendEvent(
+            TOPICS.EXCHANGE,
+            STATUS_EVENT[data.status] || 'EXCHANGE_UPDATED',
+            `${data.from_pharm_id}:${data.to_pharm_id}`,
+            buildExchangePayload(data)
+        );
         res.status(201).json(enriched);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-// PATCH update identified by request_id
 export const patchExchange = async (req, res) => {
     try {
         const requestId = req.params.id;
         const updates = { ...req.body };
-
         await validateFKs(updates);
         const updated = await exchangePharmDB.updateExchange(requestId, updates);
         const enriched = await enrichExchange(updated);
+        await sendEvent(
+            TOPICS.EXCHANGE,
+            STATUS_EVENT[updated.status] || 'EXCHANGE_UPDATED',
+            `${updated.from_pharm_id}:${updated.to_pharm_id}`,
+            buildExchangePayload(updated)
+        );
         res.status(200).json(enriched);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 };
 
-// DELETE single by ID
 export const deleteExchangeById = async (req, res) => {
     try {
         const data = await exchangePharmDB.deleteExchange(req.params.id);
@@ -117,7 +139,6 @@ export const deleteExchangeById = async (req, res) => {
     }
 };
 
-// DELETE multiple exchanges via query params
 export const deleteExchangesByQuery = async (req, res) => {
     try {
         const ids = parseIds(req);
