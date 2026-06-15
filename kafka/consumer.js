@@ -1,13 +1,15 @@
 import kafka from './kafkaClient.js';
 
+const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
+
 const consumers = new Map();
 
-/**
- * @param {string} groupId
- * @param {string[]} topics
- * @param {(topic: string, eventType: string, payload: object) => void} handler
- */
 export async function startConsumer(groupId, topics, handler) {
+    if (!KAFKA_ENABLED) {
+        console.log(`[Kafka] Disabled — skipping consumer [${groupId}]`);
+        return null;
+    }
+
     const consumer = kafka.consumer({ groupId });
     await consumer.connect();
 
@@ -27,14 +29,16 @@ export async function startConsumer(groupId, topics, handler) {
     });
 
     consumers.set(groupId, consumer);
-    console.log(`Kafka consumer [${groupId}] subscribed to: ${topics.join(', ')}`);
+    console.log(`[Kafka] Consumer [${groupId}] subscribed to: ${topics.join(', ')}`);
     return consumer;
 }
 
 export async function stopAllConsumers() {
+    if (!KAFKA_ENABLED) return;
+
     for (const [groupId, consumer] of consumers.entries()) {
         await consumer.disconnect();
         consumers.delete(groupId);
-        console.log(`Kafka consumer [${groupId}] disconnected`);
+        console.log(`[Kafka] Consumer [${groupId}] disconnected`);
     }
 }

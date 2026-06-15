@@ -1,25 +1,33 @@
 import kafka from './kafkaClient.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const producer = kafka.producer();
+const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
+
+const producer = KAFKA_ENABLED ? kafka.producer() : null;
 let connected = false;
 
 export async function connectProducer() {
+    if (!KAFKA_ENABLED) {
+        console.log('[Kafka] Disabled — skipping producer connection');
+        return;
+    }
     if (!connected) {
         await producer.connect();
         connected = true;
-        console.log('Kafka producer connected');
+        console.log('[Kafka] Producer connected');
     }
 }
 
 export async function disconnectProducer() {
-    if (connected) {
-        await producer.disconnect();
-        connected = false;
-    }
+    if (!KAFKA_ENABLED || !connected) return;
+    await producer.disconnect();
+    connected = false;
+    console.log('[Kafka] Producer disconnected');
 }
 
 export async function sendEvent(topic, eventType, key, payload) {
+    if (!KAFKA_ENABLED) return;
+
     if (!connected) await connectProducer();
 
     const message = {
