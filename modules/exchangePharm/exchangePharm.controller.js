@@ -40,11 +40,11 @@ const validateFKs = async (payload) => {
 
 const enrichExchange = async (exchange) => {
     const [fromPharm, toPharm, medication, inventory, warehouse] = await Promise.all([
-        pharmInfoDB.getPharmacyById(exchange.from_pharm_id),
-        pharmInfoDB.getPharmacyById(exchange.to_pharm_id),
-        medicationDB.getMedicationById(exchange.medication_id),
-        pharmInventoryDB.getPharmInventoryById(exchange.inventory_id),
-        warehouseDB.getWarehouseById(exchange.warehouse_id),
+        exchange.from_pharm_id  ? pharmInfoDB.getPharmacyById(exchange.from_pharm_id).catch(() => null)          : null,
+        exchange.to_pharm_id    ? pharmInfoDB.getPharmacyById(exchange.to_pharm_id).catch(() => null)            : null,
+        exchange.medication_id  ? medicationDB.getMedicationById(exchange.medication_id).catch(() => null)        : null,
+        exchange.inventory_id   ? pharmInventoryDB.getPharmInventoryById(exchange.inventory_id).catch(() => null) : null,
+        exchange.warehouse_id   ? warehouseDB.getWarehouseById(exchange.warehouse_id).catch(() => null)           : null,
     ]);
     return { ...exchange, from_pharm: fromPharm, to_pharm: toPharm, medication, inventory, warehouse };
 };

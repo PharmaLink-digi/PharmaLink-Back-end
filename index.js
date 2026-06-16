@@ -20,6 +20,14 @@ import paymentRouter from "./modules/payment/payment.routes.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+process.on('uncaughtException', (err) => {
+    console.error('[Server] Uncaught Exception — server stays up:', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+    console.error('[Server] Unhandled Rejection — server stays up:', reason?.message || reason);
+});
+
 app.use(express.json());
 app.use(cors());
 
