@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import 'dotenv/config';
 import { connectProducer, disconnectProducer } from "./kafka/producer.js";
+import { stopAllConsumers } from "./kafka/consumer.js";
 
 import clientRouter from "./modules/client/client.routes.js";
 import pharmInfoRouter from "./modules/pharmInfo/pharmInfo.routes.js";
@@ -47,16 +48,14 @@ app.use(exchangePharmRouter);
 
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
-    if (process.env.KAFKA_ENABLED === 'true') {
-        try {
-            await connectProducer();
-        } catch (err) {
-            console.warn('[Kafka] Startup connection failed — server continues without Kafka:', err.message);
-        }
+    try {
+        await connectProducer();
+    } catch (err) {
+        console.warn('[Kafka] Producer startup failed — server continues without Kafka:', err.message);
     }
 });
 
 process.on('SIGTERM', async () => {
-    await disconnectProducer();
+    await Promise.allSettled([disconnectProducer(), stopAllConsumers()]);
     process.exit(0);
 });

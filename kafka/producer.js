@@ -1,48 +1,61 @@
 import kafka from './kafkaClient.js';
 import { v4 as uuidv4 } from 'uuid';
 
-const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
+export const TOPICS = {
+    SALES:               'pharmacy.sales',
+    ORDERS:              'pharmacy.orders',
+    ORDER_DETAILS:       'pharmacy.order.details',
+    PHARM_INVENTORY:     'pharmacy.inventory.updates',
+    EXPIRY_ALERTS:       'pharmacy.expiry.alerts',
+    EXCHANGE:            'pharmacy.exchange',
+    WAREHOUSE_INVENTORY: 'warehouse.inventory.updates',
+    DLQ:                 'pharmacy.dlq',
+};
 
-const producer = KAFKA_ENABLED ? kafka.producer() : null;
-let connected = false;
+const producer = kafka.producer({ allowAutoTopicCreation: true });
+
+let connected  = false;
+let connecting = false;
+
+// ── Connection management ─────────────────────────────────────────────────────
 
 export async function connectProducer() {
-    if (!KAFKA_ENABLED) {
-        console.log('[Kafka] Disabled — skipping producer connection');
-        return;
-    }
-    if (connected) return;
+    if (connected)  return;
+    if (connecting) return;
+    connecting = true;
     try {
         await producer.connect();
         connected = true;
         console.log('[Kafka] Producer connected');
     } catch (err) {
         connected = false;
-        console.warn('[Kafka] Producer connection failed:', err.message);
+        console.error('[Kafka] Producer connection failed:', err.message);
         throw err;
+    } finally {
+        connecting = false;
     }
 }
 
 export async function disconnectProducer() {
-    if (!KAFKA_ENABLED || !connected) return;
+    if (!connected) return;
     try {
         await producer.disconnect();
+        console.log('[Kafka] Producer disconnected');
     } catch (err) {
-        console.warn('[Kafka] Producer disconnect error:', err.message);
+        console.error('[Kafka] Producer disconnect error:', err.message);
     } finally {
         connected = false;
-        console.log('[Kafka] Producer disconnected');
     }
 }
 
-export async function sendEvent(topic, eventType, key, payload) {
-    if (!KAFKA_ENABLED) return;
+// ── Internal send (runs in background) ───────────────────────────────────────
 
+async function _doSend(topic, eventType, key, payload) {
     if (!connected) {
         try {
             await connectProducer();
         } catch {
-            console.warn(`[Kafka] sendEvent skipped (producer not connected): ${topic}`);
+            console.warn(`[Kafka] sendEvent skipped — producer not connected [topic: ${topic}]`);
             return;
         }
     }
@@ -61,34 +74,40 @@ export async function sendEvent(topic, eventType, key, payload) {
             messages: [{ key: String(key), value: JSON.stringify(message) }],
         });
     } catch (err) {
+        connected = false; // force reconnect on next call
         console.error(`[Kafka] Failed to send to ${topic}:`, err.message);
-        try {
-            await producer.send({
-                topic: TOPICS.DLQ,
-                messages: [{
-                    key: String(key),
-                    value: JSON.stringify({
-                        error:          err.message,
-                        original_topic: topic,
-                        key:            String(key),
-                        payload:        message,
-                        ts:             new Date().toISOString(),
-                    }),
-                }],
-            });
-        } catch (dlqErr) {
-            console.error('[Kafka] DLQ also failed:', dlqErr.message);
-        }
+        _sendToDLQ(topic, key, message, err.message);
     }
 }
 
-export const TOPICS = {
-    SALES:               'pharmacy.sales',
-    ORDERS:              'pharmacy.orders',
-    ORDER_DETAILS:       'pharmacy.order.details',
-    PHARM_INVENTORY:     'pharmacy.inventory.updates',
-    EXPIRY_ALERTS:       'pharmacy.expiry.alerts',
-    EXCHANGE:            'pharmacy.exchange',
-    WAREHOUSE_INVENTORY: 'warehouse.inventory.updates',
-    DLQ:                 'pharmacy.dlq',
-};
+async function _sendToDLQ(originalTopic, key, message, errorMessage) {
+    try {
+        await producer.send({
+            topic: TOPICS.DLQ,
+            messages: [{
+                key: String(key),
+                value: JSON.stringify({
+                    error:          errorMessage,
+                    original_topic: originalTopic,
+                    key:            String(key),
+                    payload:        message,
+                    ts:             new Date().toISOString(),
+                }),
+            }],
+        });
+    } catch (dlqErr) {
+        console.error('[Kafka] DLQ send also failed:', dlqErr.message);
+    }
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+//
+// Fire-and-forget: callers may `await sendEvent(...)` — it resolves immediately
+// while the actual Kafka publish runs in the background.
+// Errors are logged; they never reach the caller or block the HTTP response.
+
+export function sendEvent(topic, eventType, key, payload) {
+    _doSend(topic, eventType, key, payload).catch(err => {
+        console.error(`[Kafka] Unhandled background error [${topic}]:`, err.message);
+    });
+}

@@ -1,15 +1,10 @@
 import kafka from './kafkaClient.js';
 
-const KAFKA_ENABLED = process.env.KAFKA_ENABLED === 'true';
-
 const consumers = new Map();
 
-export async function startConsumer(groupId, topics, handler) {
-    if (!KAFKA_ENABLED) {
-        console.log(`[Kafka] Disabled — skipping consumer [${groupId}]`);
-        return null;
-    }
+// ── Start a consumer group ────────────────────────────────────────────────────
 
+export async function startConsumer(groupId, topics, handler) {
     try {
         const consumer = kafka.consumer({ groupId });
         await consumer.connect();
@@ -24,7 +19,7 @@ export async function startConsumer(groupId, topics, handler) {
                     const msg = JSON.parse(message.value.toString());
                     await handler(topic, msg.event_type, msg.payload);
                 } catch (err) {
-                    console.error(`[Kafka Consumer] Error processing message from ${topic}:`, err.message);
+                    console.error(`[Kafka Consumer] Error in [${groupId}] on ${topic}:`, err.message);
                 }
             },
         });
@@ -33,22 +28,23 @@ export async function startConsumer(groupId, topics, handler) {
         console.log(`[Kafka] Consumer [${groupId}] subscribed to: ${topics.join(', ')}`);
         return consumer;
     } catch (err) {
-        console.warn(`[Kafka] Consumer [${groupId}] failed to start:`, err.message);
+        console.error(`[Kafka] Consumer [${groupId}] failed to start:`, err.message);
         return null;
     }
 }
 
-export async function stopAllConsumers() {
-    if (!KAFKA_ENABLED) return;
+// ── Graceful shutdown ─────────────────────────────────────────────────────────
 
-    for (const [groupId, consumer] of consumers.entries()) {
+export async function stopAllConsumers() {
+    const stops = [...consumers.entries()].map(async ([groupId, consumer]) => {
         try {
             await consumer.disconnect();
+            console.log(`[Kafka] Consumer [${groupId}] disconnected`);
         } catch (err) {
-            console.warn(`[Kafka] Consumer [${groupId}] disconnect error:`, err.message);
+            console.error(`[Kafka] Consumer [${groupId}] disconnect error:`, err.message);
         } finally {
             consumers.delete(groupId);
-            console.log(`[Kafka] Consumer [${groupId}] disconnected`);
         }
-    }
+    });
+    await Promise.allSettled(stops);
 }
