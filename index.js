@@ -39,7 +39,13 @@ app.use(exchangePharmRouter);
 
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
-    await connectProducer();
+    if (process.env.KAFKA_ENABLED === 'true') {
+        try {
+            await connectProducer();
+        } catch (err) {
+            console.warn('[Kafka] Startup connection failed — server continues without Kafka:', err.message);
+        }
+    }
 });
 
 process.on('SIGTERM', async () => {
