@@ -47,3 +47,17 @@ export const deletePharmInventory = async (id) => {
     if (error) throw error;
     return data;
 };
+
+export const getPharmInventoriesByIds = async (ids, filters = {}) => {
+    let query = supabase.from("t_pharm_inventory").select("*").in('inventory_id', ids);
+    if (filters) Object.entries(filters).forEach(([k, v]) => { query = query.eq(k, v); });
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+};
+
+export const deletePharmInventoriesByIds = async (ids) => {
+    const { data, error } = await supabase.from("t_pharm_inventory").delete().in('inventory_id', ids);
+    if (error) throw error;
+    return data;
+};

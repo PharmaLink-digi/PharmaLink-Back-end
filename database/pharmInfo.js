@@ -22,9 +22,9 @@ export const getAllPharmacies = async (filters = {}) => {
 
 // Get by ID
 export const getPharmacyById = async (id) => {
-    const { data, error } = await supabase.from("t_pharm_info").select("*").eq("pharm_id", id).single();
+    const { data, error } = await supabase.from("t_pharm_info").select("*").eq("pharm_id", id).maybeSingle();
     if (error) throw error;
-    return data;
+    return data; // null when not found — controller sends 404
 };
 
 // Insert

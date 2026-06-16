@@ -17,6 +17,7 @@ export const getAllPharmacies = async (req, res) => {
 export const getPharmacyById = async (req, res) => {
     try {
         const data = await pharmInfoDB.getPharmacyById(req.params.id);
+        if (!data) return res.status(404).json({ message: `Pharmacy ${req.params.id} not found` });
         res.status(200).json(data);
     } catch (err) {
         res.status(500).json({ message: err.message });
